@@ -1,0 +1,92 @@
+* Introduction
+
+  CharRot provides a command `charrot-replace' to replace the text
+  before point with an arbitrary string, like the Emacs standard
+  `abbrev-mode'.  There are two main differences with `abbrev-mode':
+
+  * Any text string can be defined as an abbreviation, not just
+    words.  (On the other hand, this means that CharRot cannot
+    provide any case-matching feature: abbreviation and replacement
+    are matched verbatim.)
+
+  * Replacement is not performed automatically but
+    must be invoked by calling the command `charrot-replace'.
+
+  `charrot-replace' scans the text *before* point; if it matches any
+  abbreviation defined with `charrot-define-abbrev' or
+  `charrot-define-rotating', it will be replaced with the appropriate
+  replacement string. The longest-matching string is replaced. Point
+  is kept at the end of the replacement string -- thus, repeated
+  application of `charrot-replace' is possible. Undo works as usual,
+  so any replacement can be undone with `C-_'.
+
+* Example usage
+
+  Load the file `charrot.el`::
+
+    #+begin_src elisp
+    (require 'charrot)
+    #+end_src
+
+  CharRot is most useful when `charrot-replace' is bound to an easily
+  accessible key chord; I use `C-;` for that:
+
+    #+begin_src elisp
+    (global-set-key (kbd "C-;") #'charrot-replace)
+    #+end_src
+
+  Replacements can now be defined with `charrot-define-abbrev` (which
+  also works interactively):
+
+    #+begin_src elisp
+    (charrot-define-abbrev "->" "\\to")
+    (charrot-define-abbrev "|->" "\\mapsto")
+    #+end_src
+
+  Now typing `C-;` just after `->` will turn it into the LaTeX
+  command `\to`; if the text before point is `|->` then the
+  replacement will be `\mapsto` instead.
+
+  One can define *rotating* replacements with `charrot-define-rotating`:
+
+    #+begin_src elisp
+    (charrot-define-rotating "..." "\\ldots" "\\cdots")
+    (charrot-define-rotating "a" "\\alpha")
+    #+end_src
+
+  Then, pressing `C-;` once after entring `...` will turn it into
+  `\ldots`; pressing it once more will replace this with `\cdots`;
+  one more stroke of `C-;` turns back to the starting `...`.
+  Likewise, invoking `charrot-replace` when point is past an `a` will
+  turn it into `\alpha` and then back into `a`.
+
+  If you have ever used X-Symbol with LaTeX, you already know (and
+  perhaps miss) this feature.  The file `charrot-latex.el` provides a
+  list of replacements useful with TeX/LaTeX.
+
+* Caveats
+
+  The replacements table is *global*: you can't bind `^` to `\hat` in
+  LaTeX-mode and `<sup></sup>` in html-mode. (See TO-DO section.)
+
+  It is no error to define rotating replacements that cross; the
+  latter definition partially overrides the former:
+
+    #+begin_src elisp
+    (charrot-define-rotating "f*" "foo")
+    (charrot-define-rotating "foo" "bar" "baz" "quux")
+    #+end_src
+
+  Then calling `charrot-replace` turns `f*` into `foo`, but
+  successive invocations will cycle through the strings `bar`, `baz`,
+  and `quux`, without ever going back to `f*`.
+
+
+* TO-DO
+** mode-local replacements
+** ignore white space before point
+** rotate replacements forwards and backwards?
+** interactive definition of rotations?
+** add "point placement" information? e.g., to replace `^` with `\hat{}` and place point in between `{` and `}`
+
+
